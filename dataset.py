@@ -24,39 +24,41 @@ from scipy import ndimage
 from six.moves.urllib.request import urlretrieve
 from six.moves import cPickle as pickle
 
-url = 'http://commondatastorage.googleapis.com/books1000/'
-
 class Downloader:
-    def __init__(baseUrl, distDir):
+    def __init__(self, baseUrl, distDir):
         self.baseUrl = baseUrl
-        self.distDir = distDir
+        self.baseDir = distDir
         if not os.path.isdir(distDir):
             os.mkdir(distDir)
 
-    def dwn_progress(count, blkSize, totSize):
+    def dwn_progress(self, count, blkSize, totSize):
         percent = int(count * blkSize * 100 / totSize)
         if percent % 5 == 0:
             print(("\r" * 4) + ("%3d%%" % percent), end="")
 
-    def download(filename, force=False):
-        if os.path.exists(filename) and not force:
+    def download(self, filename, force=False):
+        if os.path.exists(os.path.join(self.baseDir,filename)) and not force:
             print("{}: Already donwloaded. Skipping.".format(filename))
-            return filename
-        filename, _ = urlretrieve(self.baseUrl + filename,
-                                  os.path.join(self.baseDir,filename),
-                                  reporthook=self.dwn_progress)
+            return self
+        else:
+            filename, _ = urlretrieve(
+              self.baseUrl + filename,
+              os.path.join(self.baseDir,filename),
+              reporthook=self.dwn_progress
+            )
         return self
 
-    def extract(filename, force=False):
-        root = os.path.join(self.baseDir, os.path.splitext(os.path.splitext(filename)[0])[0])
+    def extract(self, filename, force=False):
+        root = os.path.splitext(os.path.splitext(filename)[0])[0]
+        filename = os.path.join(self.baseDir, filename)
         if os.path.isdir(root) and not force:
-            print("{}: already extracted. Skipping.".format(root))
+            print("{}: already extracted. Skipping.".format(filename))
+        else:
+            tar = tarfile.open(filename)
+            tar.extractall(path=self.baseDir)
+            tar.close()
+        return self
 
-
-
-
-
-
-
-train_filename = maybe_download('notMNIST_large.tar.gz', 247336696)
-test_filename = maybe_download('notMNIST_small.tar.gz', 8458043)
+class Dataset:
+    def __init__(self):
+        pass
