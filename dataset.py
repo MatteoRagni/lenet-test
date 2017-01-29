@@ -100,6 +100,14 @@ class Downloader:
 
 class Dataset:
     def __init__(self, path, size, classes, depth=255.0):
+        r"""
+        Inizializza un nuovo dataset con:
+
+         * path: posizione del dataset
+         * size: dimensione laterale della immagine (la immagine è quadrata)
+         * depth: numero di canali della immagine
+         * classes: numero di classi in cui è suddiviso il dataset
+        """
         self.path = path
         self.size = size
         self.depth = depth
@@ -107,7 +115,18 @@ class Dataset:
         self.pickles = []
 
     def import_class(self, cls):
-        #pdb.set_trace()
+        r"""
+        Importa le immagini da una specifica classe, le legge e ne riscala il valore di
+        input secondo la relazione:
+
+        $$
+        \dfrac{x - 127.5}{255.0}
+        $$
+
+        in questo modo diventa un dataset normalizzato tra [-1, 1]. Stampa a schermo
+        il valore di media e di deviazione standard del dataset per ogni classe.
+        La nomralizzazione è per esempio, non su tutto il dataset.
+        """
         files = os.listdir(os.path.join(self.path, cls))
         dataset = np.ndarray(
           shape=(len(files), self.size, self.size),
@@ -144,6 +163,9 @@ class Dataset:
         return dataset
 
     def generate_pickle(self, force=False):
+        r"""
+        Genera il PICKLE file di ogni classe.
+        """
         classes = os.listdir(self.path)
         for cls in classes:
             if not os.path.isdir(os.path.join(self.path, cls)):
@@ -162,6 +184,13 @@ class Dataset:
         return self.pickles
 
     def merge(self, train_size, valid_size=0):
+        r"""
+        Riunisce tutti i PICKLE file di singole classi in un unico dataset combinato
+        nel quale gli elementi sono mescolati e associati con una label. In ingresso richiede una
+        dimensione di training e una dimensione di validazione. Se la dimensione di validazione
+        è 0 ovviamente ritorna un dataset di validazione vuoto. Questo permette di creare
+        dei dataset di test da dei database di dimensione più piccola.
+        """
         pickle_files = glob.glob(self.path +"/*.pickle")
         num_classes  = len(pickle_files)
 
@@ -202,6 +231,22 @@ class Dataset:
         return train_x_dataset, train_y_dataset, valid_x_dataset, valid_y_dataset
 
     def export_pickle_merged(self, out, train_size, valid_size=0, force=False):
+        r"""
+        Scrive un dataset in un pickle file. All'interno del PICKLE file ci sarà un
+        dizionario nella forma:
+
+            {
+              "train": (np.ndarray, np.ndarray) # x, y
+              "valid": (np.ndarray, np.ndarray)
+            }
+
+        che verrà utilizzato dopo nella classe Database. In questo caso richiede
+        in ingresso:
+         * out: nome del file in cui salvare il nuovo dataset combinato
+         * train_size: dimensione del dataset di training
+         * valid_size: dimensione del dataset di validazione (se zero non sarà inizializzato)
+         * force: inizializzato a False, permette di forzare la sovrascrittura di un dataset preesistente
+        """
         if os.path.exists(out) and not force:
             print("{}: already exists. Skipping".format(out))
         else:
@@ -216,6 +261,11 @@ class Dataset:
                 }, pf, pickle.HIGHEST_PROTOCOL)
 
     def reformat(self, x, y, shape_x=None, y_label=None):
+        r"""
+        Riformatta un dataset nella forma (numero, x, y) ->  (numero, x, y, depth)
+        che va utilizzato per una convolutional neural network. Meglio farlo prima
+        che farlo in seguito per ogni ciclo di ottimizzazione ;)
+        """
         if not shape_x:
             shape_x = (-1, self.size, self.size, 1)
         if not y_label:
@@ -225,11 +275,27 @@ class Dataset:
         return x, y
 
     def load(self, f):
+        r"""
+        Load a PICKLE file
+        """
         with open(f, "rb") as fp:
             return pickle.load(fp)
 
 class Database(dict):
     def __init__(self, db1, db2):
+        r"""
+        Importa i due database db1 e db2. db1 contiene i dataset di training e di validazione,
+        db2 contiene i dataset di test. Eredita da un dictionary e definnisce le chiavi e i metodi:
+         * "train"
+          * "x"
+          * "y"
+         * "valid"
+          * "x"
+          * "y"
+         * "test"
+          * "x"
+          * "y"
+        """
         ddb1 = self.load(db1)
         ddb2 = self.load(db2)
 
@@ -238,14 +304,32 @@ class Database(dict):
         self["test"]  = {"x": ddb2["train"][0], "y": ddb2["train"][1]}
 
     def load(self, f):
+        r"""
+        Carica il dataset da un PICKLE
+        """
         with open(f, "rb") as fp:
             return pickle.load(fp)
 
     def train(self, t):
+        r"""
+        Permette di accedere direttamente alla chiave "train".
+        L'rgomento di questa funzione dovrebbe essere "x" o "y",
+        per accedere rispettivamente agli esempi o ai label associati
+        """
         return self["train"][t]
 
     def test(self, t):
+        r"""
+        Permette di accedere direttamente alla chiave "test".
+        L'rgomento di questa funzione dovrebbe essere "x" o "y",
+        per accedere rispettivamente agli esempi o ai label associati
+        """
         return self["test"][t]
 
     def valid(self, t):
+        r"""
+        Permette di accedere direttamente alla chiave "valid".
+        L'rgomento di questa funzione dovrebbe essere "x" o "y",
+        per accedere rispettivamente agli esempi o ai label associati
+        """
         return self["valid"][t]
