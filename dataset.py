@@ -333,3 +333,12 @@ class Database(dict):
         per accedere rispettivamente agli esempi o ai label associati
         """
         return self["valid"][t]
+
+    def batch_loop(batch_size, type="train"):
+        r"""
+        Generatore di loop da utilizzare per il training delle diverse funzioni
+        """
+        for i in range(0, np.shape(self[type]["x"])[0] // batch_size):
+            yield(i,
+              self[type]["x"][(i * batch_size):((i + 1) * batch_size),:,:,:],
+              self[type]["y"][(i * batch_size):((i + 1) * batch_size),:,:,:])
