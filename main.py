@@ -20,8 +20,9 @@ Downloader(
 ## Dataset files to binary picle format
 
 image_size = 28
-dataset_small = Dataset('dataset/notMNIST_small', image_size)
-dataset_large = Dataset('dataset/notMNIST_large', image_size)
+no_classes = 10
+dataset_small = Dataset('dataset/notMNIST_small', image_size, no_classes)
+dataset_large = Dataset('dataset/notMNIST_large', image_size, no_classes)
 dataset_small.generate_pickle()
 dataset_large.generate_pickle()
 
@@ -41,4 +42,6 @@ dataset_large.export_pickle_merged(
 
 db = Database("dataset/train.pickle", "dataset/test.pickle")
 
-print(db.train("x").shape)
+print("Training size: {} -> {}".format(db.train("x").shape, db.train("y").shape))
+print("Validation size: {} -> {}".format(db.valid("x").shape, db.valid("y").shape))
+print("Testing size: {} -> {}".format(db.test("x").shape, db.test("y").shape))

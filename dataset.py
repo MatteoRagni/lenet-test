@@ -99,10 +99,11 @@ class Downloader:
 
 
 class Dataset:
-    def __init__(self, path, size, depth=255.0):
+    def __init__(self, path, size, classes, depth=255.0):
         self.path = path
         self.size = size
         self.depth = depth
+        self.classes = classes
         self.pickles = []
 
     def import_class(self, cls):
@@ -205,11 +206,23 @@ class Dataset:
             print("{}: already exists. Skipping".format(out))
         else:
             t_x_db, t_y_db, v_x_db, v_y_db = self.merge(train_size, valid_size)
+            t_x_db, t_y_db = self.reformat(t_x_db, t_y_db)
+            if v_x_db is not None:
+                v_x_db, v_y_db = self.reformat(v_x_db, v_y_db)
             with open(out, "wb") as pf:
                 pickle.dump({
                   'train': (t_x_db, t_y_db),
                   'valid': (v_x_db, v_y_db)
                 }, pf, pickle.HIGHEST_PROTOCOL)
+
+    def reformat(self, x, y, shape_x=None, y_label=None):
+        if not shape_x:
+            shape_x = (-1, self.size, self.size, 1)
+        if not y_label:
+            y_label = self.classes
+        x = x.reshape(shape_x).astype(np.float32)
+        y = (np.arange(y_label) == y[:, None]).astype(np.float32)
+        return x, y
 
     def load(self, f):
         with open(f, "rb") as fp:
