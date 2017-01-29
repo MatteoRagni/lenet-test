@@ -334,11 +334,28 @@ class Database(dict):
         """
         return self["valid"][t]
 
-    def batch_loop(batch_size, type="train"):
+    def batch_loop(self, batch_size, type="train"):
         r"""
         Generatore di loop da utilizzare per il training delle diverse funzioni
         """
         for i in range(0, np.shape(self[type]["x"])[0] // batch_size):
             yield(i,
               self[type]["x"][(i * batch_size):((i + 1) * batch_size),:,:,:],
-              self[type]["y"][(i * batch_size):((i + 1) * batch_size),:,:,:])
+              self[type]["y"][(i * batch_size):((i + 1) * batch_size),:])
+
+
+    def batch(self, batch_size):
+        r"""
+        Generatore di loop da utilizzare per il training delle diverse funzioni
+        """
+        train_size = np.shape(self["train"]["x"])[0]
+        valid_size = np.shape(self["valid"]["x"])[0]
+        train_step = train_size // batch_size
+        valid_batch = valid_size // train_step
+
+        for i in range(0, train_step):
+            yield(i,
+              self["train"]["x"][(i * batch_size):((i + 1) * batch_size),:,:,:],
+              self["train"]["y"][(i * batch_size):((i + 1) * batch_size),:],
+              self["valid"]["x"][(i * valid_batch):((i + 1) * valid_batch),:,:,:],
+              self["valid"]["y"][(i * valid_batch):((i + 1) * valid_batch),:])

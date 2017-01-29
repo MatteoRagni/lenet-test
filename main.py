@@ -20,6 +20,8 @@
 import sys
 sys.path.insert(0, '.')
 
+import tensorflow as tf
+
 from dataset import *
 from model import *
 
@@ -107,3 +109,31 @@ configuration = {
 }
 
 model = Model(configuration)
+
+#  _____         _      _
+# |_   _| _ __ _(_)_ _ (_)_ _  __ _
+#   | || '_/ _` | | ' \| | ' \/ _` |
+#   |_||_| \__,_|_|_||_|_|_||_\__, |
+#                             |___/
+
+print("\nStep       Training        Validation      Last cross.entropy")
+with tf.Session(graph=model.graph) as session:
+    session.run(tf.global_variables_initializer())
+
+    for i, x, y, vx, vy in db.batch(20):
+        model.optimizer.run(
+          feed_dict={ model.x: x, model.label: y, model.l6_dropout: 0.5 }
+        )
+        if i % 100 == 0:
+            print("%7d    %1.10f    %1.10f    %1.10f" % (i,
+              model.accuracy.eval(
+                feed_dict={ model.x: x, model.label: y, model.l6_dropout: 1.0 }
+              ),
+              model.accuracy.eval(
+                feed_dict={ model.x: vx, model.label: vy, model.l6_dropout: 1.0 }
+              ),
+              model.cross_entropy.eval(
+                feed_dict={ model.x: x, model.label: y, model.l6_dropout: 0.5 }
+              ))
+            )
+print("Learning Ended")
