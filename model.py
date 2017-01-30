@@ -64,6 +64,9 @@ class Model:
             self.l7_w = self.weight(self.weight_4, name="fc.2.w")
             self.l7_b = self.weight(self.bias_4, name="fc.2.b")
 
+        self.weight_to_summary("l1.w", self.l1_w)
+        self.weight_to_summary("l3.w", self.l3_w)
+
 
     def define_model(self):
         r"""
@@ -275,6 +278,21 @@ class Model:
         x e una variabile w e un peso b come logit.
         """
         return tf.nn.relu(tf.matmul(x, w) + b, name=name)
+
+    def weight_to_summary(self, name, var, batch=1):
+        r"""
+        Aggiunge i pesi come sommario. Li va a spezzare sulla base di input e di output.
+        Quindi in generale per un peso di dimensione (X, X, 5, 4) produce 20 immagini
+        con nome: name.in.2.out.3 ad esempio.
+        """
+        with self.graph.as_default():
+            with tf.name_scope("weights.visualization"):
+                shape = var.get_shape()
+                for i in range(0, shape[2]):
+                    for o in range(0, shape[3]):
+                        l_name = ("%s.in.%d.out.%d" % (name, i, o))
+                        tf.summary.image(l_name, tf.reshape(var[:, :, i:i+1, o:o+1], [1,5,5,1]))
+                        # TODO Hardcoded [5, 5]: bisogna sistemarlo.
 
 
 class bcolors:
