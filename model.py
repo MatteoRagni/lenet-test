@@ -58,11 +58,11 @@ class Model:
 
             # Layer 5: Hidden fully connected layer Variables
             self.l5_w = self.weight(self.weight_3, name="fc.1.w")
-            self.l5_b = self.weight(self.bias_3, name="fc.1.b")
+            self.l5_b = self.bias(self.bias_3, name="fc.1.b")
 
             # Layer 7: Readout layer
             self.l7_w = self.weight(self.weight_4, name="fc.2.w")
-            self.l7_b = self.weight(self.bias_4, name="fc.2.b")
+            self.l7_b = self.bias(self.bias_4, name="fc.2.b")
 
         self.weight_to_summary("l1.w", self.l1_w)
         self.weight_to_summary("l3.w", self.l3_w)
