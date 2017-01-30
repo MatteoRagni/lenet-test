@@ -265,6 +265,9 @@ class Dataset:
         Riformatta un dataset nella forma (numero, x, y) ->  (numero, x, y, depth)
         che va utilizzato per una convolutional neural network. Meglio farlo prima
         che farlo in seguito per ogni ciclo di ottimizzazione ;)
+
+        Questa funzione si occupa anche della generazione di una permutazione
+        casuale degli indici del dataset in modo tale da avere classi non consecutive
         """
         if not shape_x:
             shape_x = (-1, self.size, self.size, 1)
@@ -272,7 +275,12 @@ class Dataset:
             y_label = self.classes
         x = x.reshape(shape_x).astype(np.float32)
         y = (np.arange(y_label) == y[:, None]).astype(np.float32)
-        return x, y
+
+        # Crea una permutazione del dataset in input,
+        # in modo tale da mescolarlo
+        p = np.random.permutation(x.shape[0])
+
+        return x[p], y[p]
 
     def load(self, f):
         r"""

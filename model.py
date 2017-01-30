@@ -94,24 +94,37 @@ class Model:
         """
         with self.graph.as_default():
             # Layer 1: Convolutional layer
-            self.l1 = tf.nn.relu(self.convolution(self.x, self.l1_w) + self.l1_b,
-              name="layer.1.convolution")
+            with tf.name_scope("layer.1"):
+                self.l1 = tf.nn.relu(self.convolution(self.x, self.l1_w, name="layer.1.convolution") +
+                  self.l1_b, name="layer.1.relu")
+
             # Layer 2: Max pooling layer
-            self.l2 = self.max_pool(self.l1, name="layer.2.maxpooling")
+            with tf.name_scope("layer.2"):
+                self.l2 = self.max_pool(self.l1, name="layer.2.maxpooling")
+
             # Layer 3: Convolutional layer
-            self.l3 = tf.nn.relu(self.convolution(self.l2, self.l3_w) + self.l3_b,
-              name="layer.3.convolution")
+            with tf.name_scope("layer.3"):
+                self.l3 = tf.nn.relu(self.convolution(self.l2, self.l3_w, name="layer.3.convolution") +
+                  self.l3_b, name="layer.3.relu")
+
             # Layer 4: Max pooling layer
-            self.l4 = self.max_pool(self.l3, name="layer.4.maxpooling")
-            self.l4_flat = tf.reshape(self.l4, self.l4reshape)
+            with tf.name_scope("layer.4"):
+                self.l4 = self.max_pool(self.l3, name="layer.4.maxpooling")
+                self.l4_flat = tf.reshape(self.l4, self.l4reshape, name="layer.4.reshaping")
+
             # Layer 5: Fully connected layer
-            self.l5 = self.fully_connect(self.l4_flat, self.l5_w, self.l5_b,
-              name="layer.5.fully.connected")
+            with tf.name_scope("layer.5"):
+                self.l5 = self.fully_connect(self.l4_flat, self.l5_w, self.l5_b,
+                  name="layer.5.fully.connected")
+
             # Layer 6: Dropout layer
-            self.l6 = tf.nn.dropout(self.l5, self.l6_dropout)
+            with tf.name_scope("layer.6"):
+                self.l6 = tf.nn.dropout(self.l5, self.l6_dropout)
+
             # Layer 7: Fully connected output layer
-            self.l7 = self.fully_connect(self.l6, self.l7_w, self.l7_b,
-             name="layer.7.fully.connected")
+            with tf.name_scope("layer.7"):
+                self.l7 = self.fully_connect(self.l6, self.l7_w, self.l7_b,
+                 name="layer.7.fully.connected")
         return self.l7
 
     def define_optimizer(self, learning_rate=1e-4):
@@ -120,11 +133,15 @@ class Model:
         grafo della rete neurale
         """
         with self.graph.as_default():
-            self.cross_entropy= tf.reduce_mean(
-              tf.nn.softmax_cross_entropy_with_logits(self.l7, self.label),
-              name="cross.entropy")
+            with tf.name_scope("output.layer"):
+                self.cross_entropy = tf.reduce_mean(
+                  tf.nn.softmax_cross_entropy_with_logits(logits=self.l7, labels=self.label),
+                  name="cross.entropy")
 
-            self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cross_entropy)
+                self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cross_entropy)
+
+                # Aggiungo la cross.entropy al sommario per tensorboard
+                tf.summary.scalar("cross.entropy", self.cross_entropy)
         return self.cross_entropy, self.optimizer
 
 
@@ -134,17 +151,22 @@ class Model:
         media rispetto alla serie di label in ingresso.
         """
         with self.graph.as_default():
-            self.prediction = tf.argmax(self.l7, 1)
+            self.predict_label = tf.argmax(self.l7, 1)
+            self.predict_prob  = tf.nn.softmax(self.l7)
+            self.correct_label = tf.argmax(self.label, 1)
             self.accuracy = tf.reduce_mean(
               tf.cast(
                 tf.equal(
-                  self.prediction,
-                  tf.argmax(self.label, 1)
+                  self.predict_label,
+                  self.correct_label
                 ),
                 tf.float32
               )
             )
-        return self.accuracy, self.prediction
+
+            # Aggiungo accuracy all'elenco del sommario per tensorboard
+            tf.summary.scalar("accuracy", self.accuracy)
+        return self.accuracy, self.predict_label
 
     #
     # Funzioni di supporto, nulla di troppo interessante. Fare riferimento ai commenti delle singole
@@ -204,9 +226,11 @@ class Model:
         # Configuration for input layer
         with self.graph.as_default():
             self.x = tf.placeholder(tf.float32,
-              shape=[None, config["image.size"], config["image.size"], config["depth.1"]])
+              shape=[None, config["image.size"], config["image.size"], config["depth.1"]],
+              name="input")
             self.label = tf.placeholder(tf.float32,
-              shape=[None, config["fc.2.out"]])
+              shape=[None, config["fc.2.out"]],
+              name="labels")
             self.l6_dropout = tf.placeholder(tf.float32, name="dropout.keep-probability")
 
 
@@ -226,15 +250,15 @@ class Model:
         return tf.Variable(tf.constant(0.1, shape=shape), name=name)
 
 
-    def convolution(self, x, w):
+    def convolution(self, x, w, name=""):
         r"""
         Ritorna la convoluzione tra una funzione composta x e una variabile w
         """
         if self.gpu:
-            return tf.nn.conv2d(x, w, strides=self.conv_stride, padding=self.conv_padding)
+            return tf.nn.conv2d(x, w, strides=self.conv_stride, padding=self.conv_padding, name=name)
 
         return tf.nn.conv2d(x, w, strides=self.conv_stride, padding=self.conv_padding,
-          use_cudnn_on_gpu=False)
+          use_cudnn_on_gpu=False, name=name)
 
 
     def max_pool(self, x, name=""):
@@ -251,3 +275,41 @@ class Model:
         x e una variabile w e un peso b come logit.
         """
         return tf.nn.relu(tf.matmul(x, w) + b, name=name)
+
+
+class bcolors:
+    r"""
+    source: http://stackoverflow.com/a/287944/2319299
+    """
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def print_training_information(batch_size, step, accuracy, correct_label, predict_label, predict_prob):
+    r"""
+    Una funzione che stampa a schermo alcune infrmazioni riguardanti lo stato attuale
+    del training. Per esmpio mostra per ogni elemento del corrente batch size:
+     * step
+     * accuratezza media
+     * per ogni elemento della batch:
+       * indice
+       * label corretta
+       * label predetta
+       * probabilità percentuale predizione
+       * (se predizione sbagliata) percentuale predizione della label corretta
+    usando il colore rosso per le label sbagliate e il colore verde per le label corrette  
+    """
+    print(bcolors.BOLD + ("Step: %8d - Accuracy: %3.1f%%" % (step, accuracy * 100.0)) + bcolors.ENDC)
+    for i in range(0, batch_size):
+        color = bcolors.OKGREEN if correct_label[i] == predict_label[i] else bcolors.FAIL
+        other_prob = "" if correct_label[i] == predict_label[i] else (" (%3.5f%%)" % predict_prob[i][correct_label[i]])
+        print(color +
+          ("  %3d: (%d) -> (%d) %3.5f%%" % (i, correct_label[i],
+            predict_label[i], predict_prob[i][predict_label[i]] * 100.0)) +
+            other_prob +
+          bcolors.ENDC)

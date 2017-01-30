@@ -115,25 +115,31 @@ model = Model(configuration)
 #   | || '_/ _` | | ' \| | ' \/ _` |
 #   |_||_| \__,_|_|_||_|_|_||_\__, |
 #                             |___/
+BATCH_SIZE = 20
+summary_writer = tf.summary.FileWriter("/tmp/nn", model.graph)
 
-print("\nStep       Training        Validation      Last cross.entropy")
 with tf.Session(graph=model.graph) as session:
-    session.run(tf.global_variables_initializer())
+    merged_summary = tf.summary.merge_all()
+    tf.global_variables_initializer().run()
 
-    for i, x, y, vx, vy in db.batch(20):
+    for i, x, y, vx, vy in db.batch(BATCH_SIZE):
         model.optimizer.run(
           feed_dict={ model.x: x, model.label: y, model.l6_dropout: 0.5 }
         )
         if i % 100 == 0:
-            print("%7d    %1.10f    %1.10f    %1.10f" % (i,
-              model.accuracy.eval(
-                feed_dict={ model.x: x, model.label: y, model.l6_dropout: 1.0 }
-              ),
-              model.accuracy.eval(
-                feed_dict={ model.x: vx, model.label: vy, model.l6_dropout: 1.0 }
-              ),
-              model.cross_entropy.eval(
-                feed_dict={ model.x: x, model.label: y, model.l6_dropout: 0.5 }
-              ))
+            summary = session.run(merged_summary,
+              feed_dict={ model.x: x, model.label: y, model.l6_dropout: 1.0 }
             )
+            summary_writer.add_summary(summary, i)
+
+            accuracy, correct_label, predict_label, label_prob = session.run(
+              [model.accuracy, model.correct_label, model.predict_label, model.predict_prob],
+              feed_dict={ model.x: x, model.label: y, model.l6_dropout: 1.0 }
+            )
+            # import pdb; pdb.set_trace()
+            # questa funzione è in fondo a model.py
+            print_training_information(BATCH_SIZE, i, accuracy, correct_label, predict_label, label_prob)
+
+
+
 print("Learning Ended")
