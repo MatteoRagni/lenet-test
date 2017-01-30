@@ -302,14 +302,15 @@ def print_training_information(batch_size, step, accuracy, correct_label, predic
        * label predetta
        * probabilità percentuale predizione
        * (se predizione sbagliata) percentuale predizione della label corretta
-    usando il colore rosso per le label sbagliate e il colore verde per le label corrette  
+    usando il colore rosso per le label sbagliate e il colore verde per le label corrette
     """
+    abc = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
     print(bcolors.BOLD + ("Step: %8d - Accuracy: %3.1f%%" % (step, accuracy * 100.0)) + bcolors.ENDC)
     for i in range(0, batch_size):
         color = bcolors.OKGREEN if correct_label[i] == predict_label[i] else bcolors.FAIL
         other_prob = "" if correct_label[i] == predict_label[i] else (" (%3.5f%%)" % predict_prob[i][correct_label[i]])
         print(color +
-          ("  %3d: (%d) -> (%d) %3.5f%%" % (i, correct_label[i],
-            predict_label[i], predict_prob[i][predict_label[i]] * 100.0)) +
+          ("  %3d: (%d) -> (%d) %3.5f%%" % (i, abc[correct_label[i]],
+            abc[predict_label[i]], predict_prob[i][predict_label[i]] * 100.0)) +
             other_prob +
           bcolors.ENDC)
