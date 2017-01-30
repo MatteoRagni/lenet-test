@@ -1,3 +1,4 @@
 *pycache*
 *dataset*
 !dataset.py
+*.pyc
