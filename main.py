@@ -105,9 +105,16 @@ configuration = {
 
   "learning.rate": 1e-4,
 
-  "use.gpu": False
+  "use.gpu": True
 }
+# Disabilito la gpu per il mio portatile, nel quale ho installato Tensorflow solo
+# cpu. Per Titan posso usare ancle la gpu (e anzi la versione con CPU genera un errore)
+if os.uname()[1] == "V3N0M":
+    print(bcolors.FAIL + "Disabilito la gpu per questo sistema!" + bcolors.ENDC)
+    configuration["use.gpu"] = False
 
+
+# Dichiarazione del modello vero e proprio
 model = Model(configuration)
 
 #  _____         _      _
@@ -140,6 +147,10 @@ with tf.Session(graph=model.graph) as session:
             # questa funzione è in fondo a model.py
             print_training_information(BATCH_SIZE, i, accuracy, correct_label, predict_label, label_prob)
 
-
+accuracy, correct_label, predict_label, label_prob = session.run(
+  [model.accuracy, model.correct_label, model.predict_label, model.predict_prob],
+  feed_dict={ model.x: db.test("x")[0:100,:,:,:], model.label: db.test("y")[0:100,:], model.l6_dropout: 1.0 }
+)
+print_training_information(100, 9999999, accuracy, correct_label, predict_label, label_prob)
 
 print("Learning Ended")
