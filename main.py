@@ -20,6 +20,7 @@
 import sys
 sys.path.insert(0, '.')
 
+import time
 import tensorflow as tf
 
 from dataset import *
@@ -123,7 +124,10 @@ model = Model(configuration)
 #   |_||_| \__,_|_|_||_|_|_||_\__, |
 #                             |___/
 BATCH_SIZE = 20
-summary_writer = tf.summary.FileWriter("/tmp/nn", model.graph)
+summary_writer = tf.summary.FileWriter(
+  "/tmp/nn/{}".format(time.strftime("%Y.%m.%d-%H:%M")),
+  model.graph
+)
 
 with tf.Session(graph=model.graph) as session:
     merged_summary = tf.summary.merge_all()
