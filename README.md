@@ -65,7 +65,7 @@ Il training viene wffettuato su un batch di 20 immagini per 19900 iterazioni. La
 
 Non c'è una vera e propria fase di validazione, si va direttamente al test su 3000 immagine (questo perchè non si è fatto hyperparameter tuning in questo caso molto speciale).
 
-> RESULT ACCURACY: 94.2% on notMNIST small dataset, while large is used for training
+> RESULT ACCURACY: 95.4% on notMNIST small dataset, while large is used for training
 
 ### Todo
 
