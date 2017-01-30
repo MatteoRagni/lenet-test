@@ -310,7 +310,7 @@ def print_training_information(batch_size, step, accuracy, correct_label, predic
         color = bcolors.OKGREEN if correct_label[i] == predict_label[i] else bcolors.FAIL
         other_prob = "" if correct_label[i] == predict_label[i] else (" (%3.5f%%)" % predict_prob[i][correct_label[i]])
         print(color +
-          ("  %3d: (%d) -> (%d) %3.5f%%" % (i, abc[correct_label[i]],
+          ("  %3d: (%s) -> (%s) %3.5f%%" % (i, abc[correct_label[i]],
             abc[predict_label[i]], predict_prob[i][predict_label[i]] * 100.0)) +
             other_prob +
           bcolors.ENDC)
