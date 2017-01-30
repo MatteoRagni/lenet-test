@@ -151,7 +151,7 @@ with tf.Session(graph=model.graph) as session:
 
     accuracy, correct_label, predict_label, label_prob = session.run(
       [model.accuracy, model.correct_label, model.predict_label, model.predict_prob],
-      feed_dict={ model.x: db.test("x")[0:1000,:,:,:], model.label: db.test("y")[0:1000,:], model.l6_dropout: 1.0 }
+      feed_dict={ model.x: db.test("x")[0:3000,:,:,:], model.label: db.test("y")[0:3000,:], model.l6_dropout: 1.0 }
     )
     print_training_information(100, 9999999, accuracy, correct_label, predict_label, label_prob)
     print("\nAccuracy is = {}%".format(accuracy * 100))
